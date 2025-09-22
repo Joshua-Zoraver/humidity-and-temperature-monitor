@@ -12,7 +12,7 @@ def read_values():
     if sense is None:
         #Return fake values if RPi isnt available (testing)
         return {"humidity": 50.0, "temperature": 22.0}
-    #Return actual values from 
+    #Return actual values from sensors
     return {"humidity": sense.get_humidity(), "temperature": sense.get_temperature()}
 
 class SensorReader(threading.Thread):
