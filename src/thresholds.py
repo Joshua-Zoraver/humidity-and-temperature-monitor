@@ -18,7 +18,6 @@ HUMIDITY_THRESHOLD = (
     float(os.getenv("HUMIDITY_MAX", 70.0)),
 )
 
-
 def evaluate_sensor(value, min_thresh, max_thresh):
     if value is None:
         return "INVALID"
