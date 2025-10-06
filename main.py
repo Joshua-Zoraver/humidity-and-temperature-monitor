@@ -1,6 +1,7 @@
 import time
 from src.sensors import SensorReader
 from src.thresholds import process_sensor_reading
+from src import shared_state
 
 try:
     from src import lights
@@ -12,6 +13,9 @@ except ImportError:
 def handle_sensor_data(sensor_data):
     #This function is called automatically by SensorReader after each reading
     #It processes the data through thresholds and optionally updates display
+
+    #Cache latest data for joystick refresh
+    shared_state.latest_data = sensor_data
 
     #Evaluate sensor values and thresholds
     results = process_sensor_reading(sensor_data)

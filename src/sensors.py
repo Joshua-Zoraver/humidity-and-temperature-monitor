@@ -19,7 +19,7 @@ def read_values():
     #Get actual values from sensors
     humidity = sense.get_humidity()
     temperature = sense.get_temperature()
-    
+
     #Filter invalid values and replace with None
     return {
         "humidity": humidity if isinstance(humidity, (int, float)) and not math.isnan(humidity) else None,
