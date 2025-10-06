@@ -1,5 +1,6 @@
 import time
 import threading
+import math
 
 try:
     from sense_hat import SenseHat
@@ -12,8 +13,19 @@ def read_values():
     if sense is None:
         #Return fake values if RPi isnt available (testing)
         return {"humidity": 50.0, "temperature": 22.0}
-    #Return actual values from 
-    return {"humidity": sense.get_humidity(), "temperature": sense.get_temperature()}
+        #TODO replace above with proper error handling when no longer testing without RPi
+        # raise RuntimeError("No Sense HAT / RPi available")
+
+    #Get actual values from sensors
+    humidity = sense.get_humidity()
+    temperature = sense.get_temperature()
+    
+    #Filter invalid values and replace with None
+    return {
+        "humidity": humidity if isinstance(humidity, (int, float)) and not math.isnan(humidity) else None,
+        "temperature": temperature if isinstance(temperature, (int, float)) and not math.isnan(temperature) else None
+    }
+
 
 class SensorReader(threading.Thread):
     def __init__(self, interval = 10, callback = None):
