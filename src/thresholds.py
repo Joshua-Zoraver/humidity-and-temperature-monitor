@@ -1,12 +1,13 @@
 from datetime import datetime
 import logging
 import os
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
+from sensor_db import init_db, store_result
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 #Load thresholds from env
-load_dotenv()
+#load_dotenv()
 
 #Get thresholds from environment, use defaults if not set
 TEMP_THRESHOLD = (
@@ -27,7 +28,6 @@ def store_result(result):
     '''
     TO DO: Write function for storing results in database
     '''
-    logging.info(f"Storing result: {result}")
 
 def process_sensor_reading(sensor_data):
     now = datetime.utcnow()
@@ -55,3 +55,8 @@ def process_sensor_reading(sensor_data):
         results.append(r)
 
     return results
+
+if __name__ == "__main__":
+    init_db()
+    fake_data = {"temperature": 27.5, "humidity": 55.0}
+    process_sensor_reading(fake_data)
