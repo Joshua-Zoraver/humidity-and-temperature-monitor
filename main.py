@@ -4,7 +4,6 @@ from src.thresholds import process_sensor_reading
 from src import shared_state
 from src.sensor_db import init_db
 
-
 try:
     from src import lights
     USE_LIGHTS = True

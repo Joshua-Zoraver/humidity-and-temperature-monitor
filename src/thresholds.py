@@ -24,12 +24,6 @@ def evaluate_sensor(value, min_thresh, max_thresh):
         return "INVALID"
     return "OK" if min_thresh <= value <= max_thresh else "ALERT"
 
-def store_result(result):
-    '''
-    TO DO: Write function for storing results in database
-    '''
-    logging.info(f"Storing result: {result}")
-
 def process_sensor_reading(sensor_data):
     now = datetime.utcnow()
     results = []
