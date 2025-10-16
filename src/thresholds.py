@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 import os
 from dotenv import load_dotenv
-from sensor_db import init_db, store_result
+from src.sensor_db import init_db, store_result
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
