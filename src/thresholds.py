@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 import os
 from dotenv import load_dotenv
-from src.sensor_db import init_db, store_result
+from src.sensor_db import store_result as db_store_result
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -23,6 +23,9 @@ def evaluate_sensor(value, min_thresh, max_thresh):
     if value is None:
         return "INVALID"
     return "OK" if min_thresh <= value <= max_thresh else "ALERT"
+
+def store_result(result):
+    db_store_result(result)
 
 def process_sensor_reading(sensor_data):
     now = datetime.utcnow()
