@@ -1,6 +1,6 @@
 BEFORE TESTING (running pytest):
 in terminal run: 
-`python3 -m venv .venv`
+`python3 -m venv --system-site-packages .venv`
 `source .venv/bin/activate`
 `pip install -r requirements.txt`
 

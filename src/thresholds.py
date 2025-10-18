@@ -3,7 +3,7 @@ import logging
 import os
 from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+#logging.basicConfig(level=loggingINFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 #Load thresholds from env
 load_dotenv()
@@ -21,7 +21,12 @@ HUMIDITY_THRESHOLD = (
 def evaluate_sensor(value, min_thresh, max_thresh):
     if value is None:
         return "INVALID"
-    return "OK" if min_thresh <= value <= max_thresh else "ALERT"
+    elif value < min_thresh:
+        return "LOW"
+    elif min_thresh <= value <= max_thresh:
+        return "STABLE"
+    else:
+        return "HIGH"
 
 def store_result(result):
     '''

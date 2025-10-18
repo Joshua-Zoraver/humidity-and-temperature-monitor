@@ -2,6 +2,7 @@ import time
 from src.sensors import SensorReader
 from src.thresholds import process_sensor_reading
 from src import shared_state
+from src.GPIO_environment_control import apply_environment_control, shutdown_devices
 
 try:
     from src import lights
@@ -19,6 +20,9 @@ def handle_sensor_data(sensor_data):
 
     #Evaluate sensor values and thresholds
     results = process_sensor_reading(sensor_data)
+
+    control_actions = apply_environment_control(sensor_data)
+    print("[GPIO CONTROL]", control_actions)
 
     #Update LED if applicable
     if USE_LIGHTS:
