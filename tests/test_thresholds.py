@@ -18,7 +18,7 @@ def test_sensor_within_thresholds(monkeypatch):
     results = process_sensor_reading(data)
 
     for r in results:
-        assert r["status"] == "OK"
+        assert r["status"] == "STABLE"
         assert r["value"] == data[r["sensor"]]
 
     assert len(mock_store.results) == 2
@@ -31,7 +31,7 @@ def test_sensor_outside_thresholds(monkeypatch):
 
     results = process_sensor_reading(data)
 
-    status_map = {"temperature": "ALERT", "humidity": "ALERT"}
+    status_map = {"temperature": "HIGH", "humidity": "LOW"}
     for r in results:
         assert r["status"] == status_map[r["sensor"]]
         assert r["value"] == data[r["sensor"]]
@@ -46,7 +46,7 @@ def test_partial_threshold_violation(monkeypatch):
 
     results = process_sensor_reading(data)
 
-    expected_status = {"temperature": "OK", "humidity": "ALERT"}
+    expected_status = {"temperature": "STABLE", "humidity": "HIGH"}
     for r in results:
         assert r["status"] == expected_status[r["sensor"]]
 
@@ -63,7 +63,7 @@ def test_custom_thresholds_env(monkeypatch):
     monkeypatch.setattr('src.thresholds.store_result', mock_store)
     results = process_sensor_reading(data)
     for r in results:
-        assert r["status"] == "ALERT"
+        assert r["status"] in ["LOW", "HIGH"]
     assert len(mock_store.results) == 2
 
 def test_sensor_at_boundaries(monkeypatch):
@@ -72,7 +72,7 @@ def test_sensor_at_boundaries(monkeypatch):
     monkeypatch.setattr('src.thresholds.store_result', mock_store)
     results = process_sensor_reading(data)
     for r in results:
-        assert r["status"] == "OK"
+        assert r["status"] == "STABLE"
     assert len(mock_store.results) == 2
 
 def test_sensor_slightly_above(monkeypatch):
@@ -80,6 +80,7 @@ def test_sensor_slightly_above(monkeypatch):
     mock_store.results = []
     monkeypatch.setattr('src.thresholds.store_result', mock_store)
     results = process_sensor_reading(data)
+    expected_status = {"temperature": "LOW", "humidity": "HIGH"}
     for r in results:
-        assert r["status"] == "ALERT"
+        assert r["status"] == expected_status[r["sensor"]]
     assert len(mock_store.results) == 2

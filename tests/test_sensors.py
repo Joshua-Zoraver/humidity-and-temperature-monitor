@@ -46,6 +46,7 @@ def test_reads_handles_invalid_values(monkeypatch):
     assert data["temperature"] is None
 
 def test_sensor_reader_thread(monkeypatch):
+    import time as real_time
 
     fake_hat = MagicMock()
     fake_hat.get_humidity.return_value = 60.0

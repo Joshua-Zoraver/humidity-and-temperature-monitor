@@ -1,13 +1,16 @@
 # Testing
-pytest==8.3.3        # Framework for unit tests (TDD)
-pytest-mock==3.10.0  # Allows mocking objects/functions during tests
+pytest==8.3.3    	#Framework for unit tests (TDD)
+pytest-mock==3.10.0	#Allows mocking objects/functions during tests
 
 # Backend / API
-flask==3.1.2         # Lightweight web framework to serve API endpoints
-flask-cors==6.0.0    # Enables cross-origin requests if frontend runs separately
+flask==3.1.2		#Lightweight web framework to serve API endpoints
+flask-cors==6.0.0	#Enables cross-origin requests if frontend runs separately
 
 # Database
-SQLAlchemy==2.0.20   # ORM to interact with SQLite/MySQL easily
+SQLAlchemy==2.0.20	#ORM to interact with SQLite/MySQL easily
 
 # Optional utilities
-python-dotenv==1.0.0 # Load configuration from a .env file (thresholds, email)
+python-dotenv==1.0.0	#Load configuration from a .env file (thresholds, email)
+
+# GPIO control
+gpiozero==2.0.1 	#A simple library for controlling GPIO devices
