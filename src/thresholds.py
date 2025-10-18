@@ -28,7 +28,7 @@ def store_result(result):
     db_store_result(result)
 
 def process_sensor_reading(sensor_data):
-    now = datetime.utcnow()
+    now = datetime.now()
     results = []
 
     temp_status = evaluate_sensor(sensor_data.get("temperature"), *TEMP_THRESHOLD)
