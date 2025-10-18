@@ -3,6 +3,7 @@ from src.sensors import SensorReader
 from src.thresholds import process_sensor_reading
 from src import shared_state
 from src.GPIO_environment_control import apply_environment_control, shutdown_devices
+from src.sensor_db import init_db
 
 try:
     from src import lights
@@ -34,6 +35,7 @@ def handle_sensor_data(sensor_data):
         print(f"{r['timestamp']} | {r['sensor']}: {r['value']} -> {r['status']}")
 
 def main():
+    init_db()
     print("[main] Starting SensorReader")
 
     #Initialize joystick if using lights

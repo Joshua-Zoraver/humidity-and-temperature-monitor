@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 import os
 from dotenv import load_dotenv
+from src.sensor_db import store_result as db_store_result
 
 #logging.basicConfig(level=loggingINFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -29,13 +30,10 @@ def evaluate_sensor(value, min_thresh, max_thresh):
         return "HIGH"
 
 def store_result(result):
-    '''
-    TO DO: Write function for storing results in database
-    '''
-    logging.info(f"Storing result: {result}")
+    db_store_result(result)
 
 def process_sensor_reading(sensor_data):
-    now = datetime.utcnow()
+    now = datetime.now()
     results = []
 
     temp_status = evaluate_sensor(sensor_data.get("temperature"), *TEMP_THRESHOLD)
