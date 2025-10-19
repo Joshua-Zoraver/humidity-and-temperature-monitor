@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Greenhouse Dashboard</title>
+  <meta http-equiv="refresh" content="30"> <!-- Optional fallback refresh -->
+  <style>
+      body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+      .card { border: 1px solid #ccc; padding: 20px; width: 300px; margin: 10px auto; border-radius: 8px; }
+      h1 { color: green; }
+  </style>
+</head>
+<body>
+  <h1>Greenhouse Dashboard</h1>
+  <div class="card">
+      <h2>Temperature</h2>
+      <p id="temp">Loading...</p>
+  </div>
+  <div class="card">
+      <h2>Humidity</h2>
+      <p id="humidity">Loading...</p>
+  </div>
+
+<script>
+  async function fetchSensorData() {
+    try {
+      const response = await fetch("http://192.168.86.20:5000/sensor-data");
+      if (!response.ok) throw new Error(`API responded with status ${response.status}`);
+      const data = await response.json();
+
+      document.getElementById("temp").innerText =
+        data.temperature != null ? `${data.temperature.toFixed(2)} °C` : "No data";
+
+      document.getElementById("humidity").innerText =
+        data.humidity != null ? `${data.humidity.toFixed(2)} %` : "No data";
+
+    } catch (error) {
+      document.getElementById("temp").innerText = `Error: ${error.message}`;
+      document.getElementById("humidity").innerText = `Error: ${error.message}`;
+      console.error("Error fetching sensor data:", error);
+    }
+  }
+
+  fetchSensorData();
+  setInterval(fetchSensorData, 5000);
+</script>
+
+
+</body>
+</html>
