@@ -3,48 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <title>Greenhouse Dashboard</title>
-  <meta http-equiv="refresh" content="30"> <!-- Optional fallback refresh -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-      body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-      .card { border: 1px solid #ccc; padding: 20px; width: 300px; margin: 10px auto; border-radius: 8px; }
-      h1 { color: green; }
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f0f0f0; }
+    h1 { color: green; }
+    .card {
+      border: 1px solid #ccc; padding: 20px; width: 90%; max-width: 300px;
+      margin: 10px auto; border-radius: 8px; background: #fff; box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    }
+    .value { font-size: 2em; font-weight: bold; }
+    .ok { color: green; }
+    .alert { color: red; }
   </style>
 </head>
 <body>
   <h1>Greenhouse Dashboard</h1>
   <div class="card">
       <h2>Temperature</h2>
-      <p id="temp">Loading...</p>
+      <p id="temp" class="value">Loading...</p>
   </div>
   <div class="card">
       <h2>Humidity</h2>
-      <p id="humidity">Loading...</p>
+      <p id="humidity" class="value">Loading...</p>
   </div>
 
-<script>
-  async function fetchSensorData() {
-    try {
-      const response = await fetch("http://192.168.86.20:5000/sensor-data");
-      if (!response.ok) throw new Error(`API responded with status ${response.status}`);
-      const data = await response.json();
+  <script>
+    async function fetchSensorData() {
+      try {
+        const response = await fetch("/sensor-data");
+        if (!response.ok) throw new Error(`API responded with status ${response.status}`);
+        const data = await response.json();
 
-      document.getElementById("temp").innerText =
-        data.temperature != null ? `${data.temperature.toFixed(2)} °C` : "No data";
+        // Temperature
+        const tempEl = document.getElementById("temp");
+        if (data.temperature != null) {
+          tempEl.innerText = `${data.temperature.toFixed(2)} °C`;
+          tempEl.className = `value ${data.temp_status === "OK" ? "ok" : "alert"}`;
+        } else {
+          tempEl.innerText = "No data";
+          tempEl.className = "value";
+        }
 
-      document.getElementById("humidity").innerText =
-        data.humidity != null ? `${data.humidity.toFixed(2)} %` : "No data";
+        // Humidity
+        const humEl = document.getElementById("humidity");
+        if (data.humidity != null) {
+          humEl.innerText = `${data.humidity.toFixed(2)} %`;
+          humEl.className = `value ${data.humidity_status === "OK" ? "ok" : "alert"}`;
+        } else {
+          humEl.innerText = "No data";
+          humEl.className = "value";
+        }
 
-    } catch (error) {
-      document.getElementById("temp").innerText = `Error: ${error.message}`;
-      document.getElementById("humidity").innerText = `Error: ${error.message}`;
-      console.error("Error fetching sensor data:", error);
+      } catch (error) {
+        document.getElementById("temp").innerText = `Error: ${error.message}`;
+        document.getElementById("humidity").innerText = `Error: ${error.message}`;
+        console.error("Error fetching sensor data:", error);
+      }
     }
-  }
 
-  fetchSensorData();
-  setInterval(fetchSensorData, 5000);
-</script>
-
-
+    fetchSensorData();
+    setInterval(fetchSensorData, 1000);
+  </script>
 </body>
 </html>
