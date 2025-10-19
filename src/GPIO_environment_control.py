@@ -4,10 +4,10 @@ from src.thresholds import TEMP_THRESHOLD, HUMIDITY_THRESHOLD, evaluate_sensor
 # -------------------------------
 # GPIO Pin Assignments (BCM Mode)
 # -------------------------------
-HUMIDIFIER_PIN = 17
-DEHUMIDIFIER_PIN = 27
-HEATER_PIN = 22
-FAN_PIN = 5
+HUMIDIFIER_PIN = 5
+DEHUMIDIFIER_PIN = 6
+HEATER_PIN = 12
+FAN_PIN = 13
 
 # -------------------------------
 # Devices (GPIO Controlled)
