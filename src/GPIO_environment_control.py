@@ -7,7 +7,7 @@ from src.thresholds import TEMP_THRESHOLD, HUMIDITY_THRESHOLD, evaluate_sensor
 HUMIDIFIER_PIN = 17
 DEHUMIDIFIER_PIN = 27
 HEATER_PIN = 22
-FAN_PIN = 23
+FAN_PIN = 5
 
 # -------------------------------
 # Devices (GPIO Controlled)
