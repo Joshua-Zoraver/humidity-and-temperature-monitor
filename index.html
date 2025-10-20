@@ -14,6 +14,34 @@
     .value { font-size: 2em; font-weight: bold; }
     .ok { color: green; }
     .alert { color: red; }
+
+    /* Table container for responsiveness */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+      max-width: 100%;
+    }
+
+    table {
+      width: 90%; max-width: 600px; margin: 20px auto; border-collapse: collapse; background: white;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+      min-width: 500px; /* Prevent table from squishing too much */
+    }
+    th, td {
+      padding: 10px; border: 1px solid #ddd; text-align: center;
+    }
+    th {
+      background-color: #e0e0e0;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      table { font-size: 12px; }
+      th, td { padding: 6px; }
+      .card { padding: 10px; max-width: 95%; }
+      .value { font-size: 1.5em; }
+      h1, h2 { font-size: 1.2em; }
+    }
   </style>
 </head>
 <body>
@@ -25,6 +53,23 @@
   <div class="card">
       <h2>Humidity</h2>
       <p id="humidity" class="value">Loading...</p>
+  </div>
+
+  <h2>Recent Sensor Data (Database)</h2>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Sensor</th>
+          <th>Value</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="history-table">
+        <tr><td colspan="4">Loading...</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <script>
@@ -61,8 +106,36 @@
       }
     }
 
+    async function fetchHistory() {
+      try {
+        const response = await fetch("/history");
+        if (!response.ok) throw new Error(`API responded with status ${response.status}`);
+        const history = await response.json();
+        const tableBody = document.getElementById("history-table");
+        tableBody.innerHTML = ""; 
+
+        history.forEach(row => {
+          const statusClass = row.status === "STABLE" ? "ok" : "alert";
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.timestamp}</td>
+            <td>${row.sensor}</td>
+            <td>${row.value}</td>
+            <td class="${statusClass}">${row.status}</td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      } catch (err) {
+        document.getElementById("history-table").innerHTML =
+          `<tr><td colspan="4">Error: ${err.message}</td></tr>`;
+      }
+    }
+
     fetchSensorData();
     setInterval(fetchSensorData, 1000);
+    
+    fetchHistory();
+    setInterval(fetchHistory, 10000);
   </script>
 </body>
 </html>

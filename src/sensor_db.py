@@ -40,3 +40,17 @@ def store_result(result):
         logging.info(f"Stored result in DB: {result}")
     except Exception as e:
         logging.error(f"Failed to store result: {e}")
+
+def get_recent_data(limit=20):
+    con = sqlite3.connect(DB_PATH)
+    con.row_factory = sqlite3.Row 
+    cur = con.cursor()
+    cur.execute("""
+        SELECT timestamp, sensor, value, status
+        FROM sensor_data
+        ORDER BY timestamp DESC
+        LIMIT ?
+    """, (limit,))
+    rows = cur.fetchall()
+    con.close()
+    return [dict(row) for row in rows]
