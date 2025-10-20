@@ -37,8 +37,8 @@
         // Temperature
         const tempEl = document.getElementById("temp");
         if (data.temperature != null) {
-          tempEl.innerText = `${data.temperature.toFixed(2)} °C`;
-          tempEl.className = `value ${data.temp_status === "OK" ? "ok" : "alert"}`;
+          tempEl.innerText = `${data.temperature.toFixed(2)} °C (${data.temp_status})`;
+          tempEl.className = `value ${data.temp_status === "STABLE" ? "ok" : "alert"}`;
         } else {
           tempEl.innerText = "No data";
           tempEl.className = "value";
@@ -47,8 +47,8 @@
         // Humidity
         const humEl = document.getElementById("humidity");
         if (data.humidity != null) {
-          humEl.innerText = `${data.humidity.toFixed(2)} %`;
-          humEl.className = `value ${data.humidity_status === "OK" ? "ok" : "alert"}`;
+          humEl.innerText = `${data.humidity.toFixed(2)} % (${data.humidity_status})`;
+          humEl.className = `value ${data.humidity_status === "STABLE" ? "ok" : "alert"}`;
         } else {
           humEl.innerText = "No data";
           humEl.className = "value";
