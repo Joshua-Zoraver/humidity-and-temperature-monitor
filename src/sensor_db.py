@@ -50,7 +50,7 @@ def store_remote_data(data):
         pi_id = data.get("pi_id", "unknown")
         timestamp = datetime.now()
         
-        # Store temperature
+        #Store temperature
         if "temperature" in data:
             temp_result = {
                 "timestamp": timestamp,
@@ -60,7 +60,7 @@ def store_remote_data(data):
             }
             store_result(temp_result, pi_id)
         
-        # Store humidity
+        #Store humidity
         if "humidity" in data:
             humidity_result = {
                 "timestamp": timestamp,
@@ -79,7 +79,7 @@ def get_recent_data(limit=20, pi_id=None):
     cur = con.cursor()
     
     if pi_id:
-        # Get data for specific Pi
+        #Get data for specific Pi
         cur.execute("""
             SELECT timestamp, sensor, value, status, pi_id
             FROM sensor_data
@@ -88,7 +88,7 @@ def get_recent_data(limit=20, pi_id=None):
             LIMIT ?
         """, (pi_id, limit))
     else:
-        # Get all recent data
+        #Get all recent data
         cur.execute("""
             SELECT timestamp, sensor, value, status, pi_id
             FROM sensor_data
