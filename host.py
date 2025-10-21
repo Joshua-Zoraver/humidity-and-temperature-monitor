@@ -27,11 +27,12 @@ def stop_processes():
 
 def main():
     try:
+        #Start api.py
+        start_process("api.py")
+        
         #Start main.py
         start_process("main.py")
 
-        #Start api.py
-        start_process("api.py")
 
         #Keep script alive to monitor processes
         while True:
