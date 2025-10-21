@@ -15,17 +15,15 @@
     .ok { color: green; }
     .alert { color: red; }
 
-    /* Table container for responsiveness */
     .table-container {
       overflow-x: auto;
       margin-top: 20px;
       max-width: 100%;
     }
-
     table {
       width: 90%; max-width: 600px; margin: 20px auto; border-collapse: collapse; background: white;
       box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-      min-width: 500px; /* Prevent table from squishing too much */
+      min-width: 500px;
     }
     th, td {
       padding: 10px; border: 1px solid #ddd; text-align: center;
@@ -34,7 +32,6 @@
       background-color: #e0e0e0;
     }
 
-    /* Mobile adjustments */
     @media (max-width: 600px) {
       table { font-size: 12px; }
       th, td { padding: 6px; }
@@ -46,6 +43,7 @@
 </head>
 <body>
   <h1>Greenhouse Dashboard</h1>
+  
   <div class="card">
       <h2>Temperature</h2>
       <p id="temp" class="value">Loading...</p>
@@ -73,13 +71,13 @@
   </div>
 
   <script>
+    // --- Live local Pi sensor data ---
     async function fetchSensorData() {
       try {
         const response = await fetch("/sensor-data");
         if (!response.ok) throw new Error(`API responded with status ${response.status}`);
         const data = await response.json();
 
-        // Temperature
         const tempEl = document.getElementById("temp");
         if (data.temperature != null) {
           tempEl.innerText = `${data.temperature.toFixed(2)} °C (${data.temp_status})`;
@@ -89,7 +87,6 @@
           tempEl.className = "value";
         }
 
-        // Humidity
         const humEl = document.getElementById("humidity");
         if (data.humidity != null) {
           humEl.innerText = `${data.humidity.toFixed(2)} % (${data.humidity_status})`;
@@ -106,13 +103,14 @@
       }
     }
 
+    // --- History table ---
     async function fetchHistory() {
       try {
         const response = await fetch("/history");
         if (!response.ok) throw new Error(`API responded with status ${response.status}`);
         const history = await response.json();
         const tableBody = document.getElementById("history-table");
-        tableBody.innerHTML = ""; 
+        tableBody.innerHTML = "";
 
         history.forEach(row => {
           const statusClass = row.status === "STABLE" ? "ok" : "alert";
@@ -131,9 +129,10 @@
       }
     }
 
+    // --- Polling intervals ---
     fetchSensorData();
     setInterval(fetchSensorData, 1000);
-    
+
     fetchHistory();
     setInterval(fetchHistory, 10000);
   </script>
