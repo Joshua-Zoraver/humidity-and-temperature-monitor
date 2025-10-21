@@ -1,6 +1,7 @@
 import time
 import requests
 import json
+import socket
 from src.sensors import SensorReader, read_values
 from src.thresholds import TEMP_THRESHOLD, HUMIDITY_THRESHOLD, evaluate_sensor
 
@@ -10,6 +11,30 @@ class DataSender:
         self.pi_id = pi_id
         self.interval = interval
         
+    def test_connection(self):
+        """Test if we can reach the host"""
+        try:
+            # Extract hostname and port from URL
+            hostname = self.host_url.split('//')[1].split(':')[0]
+            port = int(self.host_url.split(':')[-1].split('/')[0])
+            
+            # Test basic connectivity
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
+            result = sock.connect_ex((hostname, port))
+            sock.close()
+            
+            if result == 0:
+                print(f"✓ Connection test successful to {hostname}:{port}")
+                return True
+            else:
+                print(f"✗ Connection test failed to {hostname}:{port}")
+                return False
+                
+        except Exception as e:
+            print(f"✗ Connection test error: {e}")
+            return False
+
     def send_data(self, sensor_data):
         """Send sensor data to host Pi"""
         try:
@@ -22,27 +47,34 @@ class DataSender:
             )
             sensor_data["pi_id"] = self.pi_id
             
+            print(f"[{self.pi_id}] Sending data: {sensor_data}")
+            
             # Send to host
             response = requests.post(
                 f"{self.host_url}/remote-data",
                 json=sensor_data,
-                timeout=5
+                timeout=10
             )
             
             if response.status_code == 200:
-                print(f"[{self.pi_id}] Data sent successfully")
+                print(f"[{self.pi_id}] ✓ Data sent successfully")
             else:
-                print(f"[{self.pi_id}] Failed to send data: {response.status_code}")
+                print(f"[{self.pi_id}] ✗ Failed to send data: {response.status_code}")
                 
+        except requests.exceptions.ConnectTimeout:
+            print(f"[{self.pi_id}] ✗ Connection timeout - host not reachable")
+        except requests.exceptions.ConnectionError:
+            print(f"[{self.pi_id}] ✗ Connection error - check host IP and port")
         except requests.exceptions.RequestException as e:
-            print(f"[{self.pi_id}] Network error: {e}")
+            print(f"[{self.pi_id}] ✗ Network error: {e}")
         except Exception as e:
-            print(f"[{self.pi_id}] Error sending data: {e}")
+            print(f"[{self.pi_id}] ✗ Error sending data: {e}")
 
 def main():
     # Configuration - update these for each client Pi
-    HOST_URL = "http://192.168.1.100:5000"  # Host Pi's IP address
+    HOST_URL = "http://192.168.86.183:5000"  # Host Pi's IP address
     PI_ID = "pi_client_1"  # Unique ID for this Pi
+    PI_ID = "pi_client_2"
     
     print(f"[{PI_ID}] Starting client data sender")
     print(f"[{PI_ID}] Connecting to host: {HOST_URL}")
