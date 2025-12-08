@@ -5,7 +5,7 @@ import math
 try:
     from sense_hat import SenseHat
     sense = SenseHat()
-except ImportError:
+except OSError:
     #If not using RPi, make fake one (testing)
     sense = None
 

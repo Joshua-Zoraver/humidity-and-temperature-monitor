@@ -2,7 +2,7 @@ try:
     from sense_hat import SenseHat
     sense = SenseHat()
     sense.clear()
-except ImportError:
+except OSError:
     sense = None
     print("[lights] Warning: No Sense HAT detected")
 
