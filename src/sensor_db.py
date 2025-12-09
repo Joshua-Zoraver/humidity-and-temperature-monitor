@@ -73,7 +73,7 @@ def store_remote_data(data):
     except Exception as e:
         logging.error(f"Failed to store remote data: {e}")
 
-def get_recent_data(limit=20, pi_id=None):
+def get_recent_data(limit=10000, pi_id=None):
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row 
     cur = con.cursor()

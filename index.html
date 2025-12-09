@@ -41,16 +41,15 @@
     }
     
     .chart-container {
-    position: relative;    /* important for Chart.js */
-    height: 300px;         /* or 40vh, etc */
-    width: 80vw;           /* responsive width */
-    max-width: 800px;
-    margin: 0 auto 20px auto;
+      position: relative;
+      height: 300px;
+      width: 80vw;
+      max-width: 800px;
+      margin: 0 auto 20px auto;
     }
-
   </style>
 
-  // Chart.js v4
+  <!-- Chart.js v4 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -65,6 +64,15 @@
     <h2>Humidity</h2>
     <p id="humidity" class="value">Loading...</p>
   </div>
+  
+  <div style="margin-bottom: 10px;">
+    Show data for:
+    <select id="timeWindow">
+      <option value="600">Last 10 minutes</option>
+      <option value="3600">Last 1 hour</option>
+      <option value="86400">Last 24 hours</option>
+    </select>
+  </div>
 
   <h2>Temperature Over Time</h2>
   <div class="chart-container">
@@ -75,7 +83,6 @@
   <div class="chart-container">
     <canvas id="humChart"></canvas>
   </div>
-
 
   <h2>Recent Sensor Data (Database)</h2>
   <div class="table-container">
@@ -108,6 +115,16 @@
         console.error("Error fetching sensor data:", error);
       }
     }
+    
+    // Filtering time windows
+    function filterByTimeWindow(history) {
+      const seconds = parseInt(document.getElementById("timeWindow").value);
+      const cutoff = Date.now() - seconds * 1000;
+
+      return history.filter(row =>
+        new Date(row.timestamp).getTime() >= cutoff
+      );
+    }
 
     function updateSensorDisplay(data, piId) {
       const prefix = piId === "host" ? "" : `${piId} - `;
@@ -134,6 +151,9 @@
     // Chart.js instances
     let tempChart = null;
     let humChart = null;
+    
+    // Cache last history so UI can render instantly on dropdown change
+    let latestHistory = [];
 
     // History table + charts
     async function fetchHistory() {
@@ -141,12 +161,29 @@
         const response = await fetch("/history");
         if (!response.ok) throw new Error(`API responded with status ${response.status}`);
         const history = await response.json();
+        latestHistory = history;
 
-        // Update table
-        const tableBody = document.getElementById("history-table");
-        tableBody.innerHTML = "";
+        // Filter and update display
+        updateDisplay();
+      } catch (err) {
+        document.getElementById("history-table").innerHTML =
+          `<tr><td colspan="4">Error: ${err.message}</td></tr>`;
+        console.error("Error fetching history:", err);
+      }
+    }
 
-        history.forEach(row => {
+    // Function to update both table and charts
+    function updateDisplay() {
+      const filtered = filterByTimeWindow(latestHistory);
+      
+      // Update table
+      const tableBody = document.getElementById("history-table");
+      tableBody.innerHTML = "";
+      
+      if (filtered.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4">No data for selected time window</td></tr>';
+      } else {
+        filtered.forEach(row => {
           const statusClass = row.status === "STABLE" ? "ok" : "alert";
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -157,142 +194,219 @@
           `;
           tableBody.appendChild(tr);
         });
-
-        // Update charts
-        updateCharts(history);
-      } catch (err) {
-        document.getElementById("history-table").innerHTML =
-          `<tr><td colspan="4">Error: ${err.message}</td></tr>`;
-        console.error("Error fetching history:", err);
       }
+
+      // Update charts
+      updateCharts(filtered);
     }
 
     function updateCharts(history) {
-      try {
-        if (!Array.isArray(history)) {
-          console.error("History from backend is not an array:", history);
-          return;
-        }
-        if (history.length === 0) {
-          console.warn("History array is empty, skipping chart update.");
-          return;
-        }
-
-        console.log("History from backend:", history);
-
-        const timestamps = [...new Set(history.map(r => r.timestamp))].sort();
-        const piIds = [...new Set(history.map(r => r.pi_id || "unknown"))];
-
-        function buildDataByPi(sensorName) {
-          const dataByPi = {};
-          piIds.forEach(pi => {
-            dataByPi[pi] = new Array(timestamps.length).fill(null);
-          });
-
-          history.forEach(row => {
-            if (row.sensor !== sensorName) return;
-            const tIndex = timestamps.indexOf(row.timestamp);
-            if (tIndex === -1) return;
-
-            const pi = row.pi_id || "unknown";
-            const rawVal = row.value;
-            const val = rawVal != null ? parseFloat(rawVal) : null;
-            dataByPi[pi][tIndex] = isNaN(val) ? null : val;
-          });
-
-          return dataByPi;
-        }
-
-        const tempDataByPi = buildDataByPi("temperature");
-        const humDataByPi = buildDataByPi("humidity");
-
-        const colors = ["red", "blue", "green", "orange", "purple", "brown", "magenta", "teal"];
-
-// Temperature chart
-const tempCanvas = document.getElementById("tempChart");
-const tempCtx = tempCanvas.getContext("2d");
-if (tempChart) tempChart.destroy();
-
-try {
-  tempChart = new Chart(tempCtx, {
-    type: "line",
-    data: {
-      labels: timestamps,
-      datasets: piIds.map((piId, idx) => ({
-        label: `Temp - ${piId}`,
-        data: tempDataByPi[piId],
-        borderColor: colors[idx % colors.length],
-        tension: 0.2,
-        spanGaps: true
-      }))
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { title: { display: true, text: "Timestamp" } },
-        y: { title: { display: true, text: "Temperature (°C)" } }
-      },
-      plugins: {
-        legend: { position: "top" },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
-          }
-        }
-      }
+  try {
+    if (!Array.isArray(history)) {
+      console.error("History from backend is not an array:", history);
+      return;
     }
-  });
-} catch (e) {
-  console.error("Chart.js error while creating temp chart:", e);
-}
 
+    console.log("Updating charts with", history.length, "data points");
 
-        // Humidity chart
-        const humCanvas = document.getElementById("humChart");
-        const humCtx = humCanvas.getContext("2d");
-        if (humChart) humChart.destroy();
+    // Separate by sensor type
+    const tempDataAll = history.filter(r => r.sensor === "temperature");
+    const humDataAll  = history.filter(r => r.sensor === "humidity");
 
-        humChart = new Chart(humCtx, {
-          type: "line",
-          data: {
-            labels: timestamps,
-            datasets: piIds.map((piId, idx) => ({
-              label: `Humidity - ${piId}`,
-              data: humDataByPi[piId],
-              borderColor: colors[idx % colors.length],
-              tension: 0.2,
-              spanGaps: true
-            }))
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              x: { title: { display: true, text: "Timestamp" } },
-              y: { title: { display: true, text: "Humidity (%)" } }
-            },
-            plugins: {
-              legend: { position: "top" },
-              tooltip: {
-                callbacks: {
-                  label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
-                }
+    // Downsample each sensor separately
+    const tempData = downsample(tempDataAll, 200);
+    const humData  = downsample(humDataAll, 200);
+
+    // If no data for either sensor, clear charts
+    if (tempData.length === 0 && humData.length === 0) {
+      if (tempChart) {
+        tempChart.data.labels = [];
+        tempChart.data.datasets = [];
+        tempChart.update();
+      }
+      if (humChart) {
+        humChart.data.labels = [];
+        humChart.data.datasets = [];
+        humChart.update();
+      }
+      console.log("No data to display in charts");
+      return;
+    }
+
+    // Pi IDs from whatever data we currently have
+    const piIds = [...new Set(history.map(r => r.pi_id || "unknown"))];
+
+    function buildChartData(sensorData) {
+      if (sensorData.length === 0) {
+        return { timestamps: [], dataByPi: {} };
+      }
+
+      const timestamps = [...new Set(sensorData.map(r => r.timestamp))].sort();
+      const dataByPi = {};
+
+      piIds.forEach(pi => {
+        dataByPi[pi] = new Array(timestamps.length).fill(null);
+      });
+
+      sensorData.forEach(row => {
+        const tIndex = timestamps.indexOf(row.timestamp);
+        if (tIndex === -1) return;
+
+        const pi = row.pi_id || "unknown";
+        let val = row.value != null ? parseFloat(row.value) : null;
+
+        // If this is humidity thats stored 0–1, convert to %
+        if (row.sensor === "humidity" && val !== null && val <= 1) {
+          val = val * 100;
+        }
+
+        dataByPi[pi][tIndex] = isNaN(val) ? null : val;
+      });
+
+      return { timestamps, dataByPi };
+    }
+
+    const tempChart_data = buildChartData(tempData);
+    const humChart_data  = buildChartData(humData);
+
+    const colors = ["red", "blue", "green", "orange", "purple", "brown", "magenta", "teal"];
+
+    // Temperature chart
+    const tempCanvas = document.getElementById("tempChart");
+    const tempCtx = tempCanvas.getContext("2d");
+    if (tempChart) tempChart.destroy();
+
+    tempChart = new Chart(tempCtx, {
+      type: "line",
+      data: {
+        labels: tempChart_data.timestamps,
+        datasets: piIds.map((piId, idx) => ({
+          label: `Temp - ${piId}`,
+          data: tempChart_data.dataByPi[piId],
+          borderColor: colors[idx % colors.length],
+          tension: 0.2,
+          spanGaps: true
+        }))
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: "Time" },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 10,
+              callback: function(value) {
+                const timestamp = this.getLabelForValue(value);
+                const date = new Date(timestamp);
+                return date.toLocaleTimeString('en-NZ', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit'
+                });
               }
             }
+          },
+          y: { title: { display: true, text: "Temperature (°C)" } }
+        },
+        plugins: {
+          legend: { position: "top" },
+          tooltip: {
+            callbacks: {
+              title: (ctx) => {
+                const date = new Date(ctx[0].label);
+                return date.toLocaleString('en-NZ');
+              },
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}°C`
+            }
           }
-        });
-      } catch (e) {
-        console.error("Error in updateCharts:", e);
+        }
       }
+    });
+
+    // Humidity chart
+    const humCanvas = document.getElementById("humChart");
+    const humCtx = humCanvas.getContext("2d");
+    if (humChart) humChart.destroy();
+
+    humChart = new Chart(humCtx, {
+      type: "line",
+      data: {
+        labels: humChart_data.timestamps,
+        datasets: piIds.map((piId, idx) => ({
+          label: `Humidity - ${piId}`,
+          data: humChart_data.dataByPi[piId],
+          borderColor: colors[idx % colors.length],
+          tension: 0.2,
+          spanGaps: true
+        }))
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: "Time" },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 10,
+              callback: function(value) {
+                const timestamp = this.getLabelForValue(value);
+                const date = new Date(timestamp);
+                return date.toLocaleTimeString('en-NZ', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit'
+                });
+              }
+            }
+          },
+          y: { title: { display: true, text: "Humidity (%)" } }
+        },
+        plugins: {
+          legend: { position: "top" },
+          tooltip: {
+            callbacks: {
+              title: (ctx) => {
+                const date = new Date(ctx[0].label);
+                return date.toLocaleString('en-NZ');
+              },
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%`
+            }
+          }
+        }
+      }
+    });
+  } catch (e) {
+    console.error("Error in updateCharts:", e);
+  }
+}
+
+    
+    // Function for downsampling to reduce amount of data points on graph
+    function downsample(data, maxPoints = 200) {
+      if (data.length <= maxPoints) return data;
+      const step = Math.ceil(data.length / maxPoints);
+      return data.filter((_, i) => i % step === 0);
     }
+    
+    // Listen for time window changes
+    document.getElementById("timeWindow").addEventListener("change", () => {
+      console.log("Time window changed");
+      updateDisplay();
+    });
 
     // Polling intervals
     fetchSensorData();
-    setInterval(fetchSensorData, 1000);
+    setInterval(fetchSensorData, 2000);
 
     fetchHistory();
-    setInterval(fetchHistory, 10000);
+    setInterval(fetchHistory, 60000);
   </script>
 </body>
 </html>

@@ -36,7 +36,7 @@ def serve_dashboard():
 def get_history():
     try:
         #Modified to include pi_id in query
-        data = get_recent_data(limit=20)  #Increased limit for multiple Pis
+        data = get_recent_data(limit=10000)  #Increased limit for multiple Pis
         return jsonify(data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
