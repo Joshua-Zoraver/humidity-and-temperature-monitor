@@ -58,10 +58,12 @@
 
   <div class="card">
     <h2>Temperature</h2>
-    <p id="temp" class="value">Loading...</p>
+      <p id="temp-pi" class="pi-id">Pi: --</p>
+      <p id="temp" class="value">Loading...</p>
   </div>
   <div class="card">
     <h2>Humidity</h2>
+    <p id="hum-pi" class="pi-id">Pi: --</p>
     <p id="humidity" class="value">Loading...</p>
   </div>
   
@@ -106,15 +108,23 @@
     async function fetchSensorData() {
       try {
         const response = await fetch("/sensor-data");
-        if (!response.ok) throw new Error(`API responded with status ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`API responded with status ${response.status}`);
+        }
         const data = await response.json();
-        updateSensorDisplay(data, "host");
+        const piId = data.pi_id || "host";
+
+        // Update Pi ID labels
+        document.getElementById("temp-pi").innerText = `Pi: ${piId}`;
+        document.getElementById("hum-pi").innerText  = `Pi: ${piId}`;
+        updateSensorDisplay(data, piId);
+
       } catch (error) {
         document.getElementById("temp").innerText = `Error: ${error.message}`;
         document.getElementById("humidity").innerText = `Error: ${error.message}`;
         console.error("Error fetching sensor data:", error);
       }
-    }
+}
     
     // Filtering time windows
     function filterByTimeWindow(history) {
