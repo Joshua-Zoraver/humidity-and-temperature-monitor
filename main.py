@@ -8,6 +8,7 @@ from src.thresholds import process_sensor_reading
 from src import shared_state
 from src.GPIO_environment_control import apply_environment_control, shutdown_devices
 from src.sensor_db import init_db
+from datetime import datetime
 
 try:
     from src import lights
@@ -19,7 +20,7 @@ except ImportError:
 # ----------------------------
 # Configuration
 # ----------------------------
-SERVER_URL = "http://192.168.1.72:5000/submit-data"  # Replace with Flask server IP
+SERVER_URL = "http://192.168.1.72:5000/remote-data"  # Replace with Flask server IP
 
 def get_pi_id():
     """
@@ -43,6 +44,11 @@ print(f"[main] Pi ID set to: {PI_ID}")
 def send_to_server(result):
     payload = result.copy()
     payload["pi_id"] = PI_ID
+    
+    ts = payload.get("timestamp")
+    if isinstance(ts, datetime):
+        payload["timestamp"] = ts.isoformat()
+    
     try:
         resp = requests.post(SERVER_URL, json=payload, timeout=5)
         resp.raise_for_status()
