@@ -45,31 +45,52 @@ def store_result(result, pi_id="host"):
         logging.error(f"Failed to store result: {e}")
 
 def store_remote_data(data):
-    """Store data received from remote Pis"""
+    """Store data received from remote Pis (supports two payload formats)."""
     try:
         pi_id = data.get("pi_id", "unknown")
+
+        # Case A: client sent a processed result row:
+        # {timestamp, sensor, value, status, pi_id}
+        if "sensor" in data and "value" in data:
+            ts = data.get("timestamp")
+            if isinstance(ts, str):
+                try:
+                    ts = datetime.fromisoformat(ts)
+                except ValueError:
+                    ts = datetime.now()
+            elif ts is None:
+                ts = datetime.now()
+
+            result = {
+                "timestamp": ts,
+                "sensor": data["sensor"],
+                "value": data["value"],
+                "status": data.get("status", "UNKNOWN"),
+            }
+            store_result(result, pi_id)
+            return  # done
+
+        # Case B: client sent combined raw readings:
         timestamp = datetime.now()
-        
-        #Store temperature
+
         if "temperature" in data:
             temp_result = {
                 "timestamp": timestamp,
                 "sensor": "temperature",
                 "value": data["temperature"],
-                "status": data.get("temp_status", "UNKNOWN")
+                "status": data.get("temp_status", "UNKNOWN"),
             }
             store_result(temp_result, pi_id)
-        
-        #Store humidity
+
         if "humidity" in data:
             humidity_result = {
                 "timestamp": timestamp,
                 "sensor": "humidity",
                 "value": data["humidity"],
-                "status": data.get("humidity_status", "UNKNOWN")
+                "status": data.get("humidity_status", "UNKNOWN"),
             }
             store_result(humidity_result, pi_id)
-            
+
     except Exception as e:
         logging.error(f"Failed to store remote data: {e}")
 
