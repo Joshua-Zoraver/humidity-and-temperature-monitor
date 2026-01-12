@@ -24,16 +24,19 @@ SERVER_URL = "http://192.168.1.72:5000/remote-data"  # Replace with Flask server
 
 def get_pi_id():
     """
-    Generates a unique Pi ID using hostname and last octet of local IP.
+    Generates a unique Pi ID using the last octet of the LAN IP.
     """
-    hostname = socket.gethostname()
     try:
-        ip_address = socket.gethostbyname(hostname)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))  # no packets sent
+        ip_address = s.getsockname()[0]
+        s.close()
+
         last_octet = ip_address.split('.')[-1]
-        pi_id = f"pi-{last_octet}"
+        return f"pi-{last_octet}"
+
     except Exception:
-        pi_id = hostname
-    return pi_id
+        return socket.gethostname()
 
 PI_ID = get_pi_id()
 print(f"[main] Pi ID set to: {PI_ID}")
