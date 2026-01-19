@@ -56,17 +56,9 @@
 <body>
   <h1>Greenhouse Dashboard</h1>
 
-  <div class="card">
-    <h2>Temperature</h2>
-      <p id="temp-pi" class="pi-id">Pi: --</p>
-      <p id="temp" class="value">Loading...</p>
-  </div>
-  <div class="card">
-    <h2>Humidity</h2>
-    <p id="hum-pi" class="pi-id">Pi: --</p>
-    <p id="humidity" class="value">Loading...</p>
-  </div>
-  
+  <h2>Live Readings</h2>
+  <div id="live-cards"></div>
+
   <div style="margin-bottom: 10px;">
     Show data for:
     <select id="timeWindow">
@@ -104,27 +96,102 @@
   </div>
 
   <script>
-    // Live local pi sensor data card
-    async function fetchSensorData() {
-      try {
-        const response = await fetch("/sensor-data");
-        if (!response.ok) {
-          throw new Error(`API responded with status ${response.status}`);
-        }
-        const data = await response.json();
-        const piId = data.pi_id || "host";
-
-        // Update Pi ID labels
-        document.getElementById("temp-pi").innerText = `Pi: ${piId}`;
-        document.getElementById("hum-pi").innerText  = `Pi: ${piId}`;
-        updateSensorDisplay(data, piId);
-
-      } catch (error) {
-        document.getElementById("temp").innerText = `Error: ${error.message}`;
-        document.getElementById("humidity").innerText = `Error: ${error.message}`;
-        console.error("Error fetching sensor data:", error);
-      }
+function statusClass(status) {
+  return status === "STABLE" ? "ok" : "alert";
 }
+
+function fmtNum(n, digits = 2) {
+  if (n == null || Number.isNaN(Number(n))) return "--";
+  return Number(n).toFixed(digits);
+}
+
+function secondsAgo(isoTs) {
+  if (!isoTs) return null;
+  const t = new Date(isoTs).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / 1000);
+}
+
+function isOnline(pi) {
+  // Consider online if we have a reading within the last 30 seconds
+  const ts = pi.temp_timestamp || pi.humidity_timestamp;
+  const age = secondsAgo(ts);
+  return age != null && age <= 30;
+}
+
+function renderLiveCards(pis) {
+  const container = document.getElementById("live-cards");
+  container.innerHTML = "";
+
+  if (!Array.isArray(pis) || pis.length === 0) {
+    container.innerHTML = `<div class="card"><p class="value">No live data</p></div>`;
+    return;
+  }
+
+  // Sort with host first, then others
+  pis.sort((a, b) => {
+    if (a.pi_id === "host") return -1;
+    if (b.pi_id === "host") return 1;
+    return (a.pi_id || "").localeCompare(b.pi_id || "");
+  });
+
+  pis.forEach(pi => {
+    const online = isOnline(pi);
+    const lastTs = pi.temp_timestamp || pi.humidity_timestamp;
+    const age = secondsAgo(lastTs);
+
+    const tempStatus = pi.temp_status || "UNKNOWN";
+    const humStatus  = pi.humidity_status || "UNKNOWN";
+
+    const tempVal = pi.temperature;
+    const humVal  = pi.humidity;
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h3>${pi.pi_id || "unknown"} ${online ? "[online]" : "[offline]️"}</h3>
+      <p style="margin-top: -6px; color: #666;">
+        ${age == null ? "Last update: --" : `Last update: ${age}s ago`}
+      </p>
+
+      <div style="margin-top: 10px;">
+        <div>
+          <strong>Temperature:</strong>
+          <span class="value ${statusClass(tempStatus)}" style="font-size: 1.4em;">
+            ${fmtNum(tempVal)} °C (${tempStatus})
+          </span>
+        </div>
+        <div style="margin-top: 8px;">
+          <strong>Humidity:</strong>
+          <span class="value ${statusClass(humStatus)}" style="font-size: 1.4em;">
+            ${fmtNum(humVal)} % (${humStatus})
+          </span>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+async function fetchLive() {
+  try {
+    const response = await fetch("/live");
+    if (!response.ok) throw new Error(`API responded with status ${response.status}`);
+    const data = await response.json();
+    renderLiveCards(data);
+  } catch (error) {
+    const container = document.getElementById("live-cards");
+    container.innerHTML = `
+      <div class="card">
+        <p class="value">Error: ${error.message}</p>
+      </div>
+    `;
+    console.error("Error fetching live data:", error);
+  }
+}
+
     
     // Filtering time windows
     function filterByTimeWindow(history) {
@@ -134,28 +201,6 @@
       return history.filter(row =>
         new Date(row.timestamp).getTime() >= cutoff
       );
-    }
-
-    function updateSensorDisplay(data, piId) {
-      const prefix = piId === "host" ? "" : `${piId} - `;
-
-      const tempEl = document.getElementById("temp");
-      if (data.temperature != null) {
-        tempEl.innerText = `${prefix}${data.temperature.toFixed(2)} °C (${data.temp_status})`;
-        tempEl.className = `value ${data.temp_status === "STABLE" ? "ok" : "alert"}`;
-      } else {
-        tempEl.innerText = "No data";
-        tempEl.className = "value";
-      }
-
-      const humEl = document.getElementById("humidity");
-      if (data.humidity != null) {
-        humEl.innerText = `${prefix}${data.humidity.toFixed(2)} % (${data.humidity_status})`;
-        humEl.className = `value ${data.humidity_status === "STABLE" ? "ok" : "alert"}`;
-      } else {
-        humEl.innerText = "No data";
-        humEl.className = "value";
-      }
     }
 
     // Chart.js instances
@@ -412,8 +457,8 @@
     });
 
     // Polling intervals
-    fetchSensorData();
-    setInterval(fetchSensorData, 2000);
+    fetchLive();
+    setInterval(fetchLive, 2000);
 
     fetchHistory();
     setInterval(fetchHistory, 60000);

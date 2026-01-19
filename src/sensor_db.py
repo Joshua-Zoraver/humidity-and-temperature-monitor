@@ -120,3 +120,49 @@ def get_recent_data(limit=10000, pi_id=None):
     rows = cur.fetchall()
     con.close()
     return [dict(row) for row in rows]
+
+
+#Get latest DB write for the cards
+def get_latest_per_pi():
+    con = sqlite3.connect(DB_PATH)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT s1.timestamp, s1.sensor, s1.value, s1.status, s1.pi_id
+        FROM sensor_data s1
+        JOIN (
+            SELECT pi_id, sensor, MAX(timestamp) AS max_ts
+            FROM sensor_data
+            GROUP BY pi_id, sensor
+        ) s2
+        ON s1.pi_id = s2.pi_id
+        AND s1.sensor = s2.sensor
+        AND s1.timestamp = s2.max_ts
+        ORDER BY s1.pi_id, s1.sensor
+    """)
+
+    rows = cur.fetchall()
+    con.close()
+
+    latest = {}
+
+    for r in rows:
+        pi = r["pi_id"]
+
+        if pi not in latest:
+            latest[pi] = {"pi_id": pi}
+
+        if r["sensor"] == "temperature":
+            latest[pi]["temperature"] = r["value"]
+            latest[pi]["temp_status"] = r["status"]
+            latest[pi]["temp_timestamp"] = r["timestamp"]
+
+        elif r["sensor"] == "humidity":
+            latest[pi]["humidity"] = r["value"]
+            latest[pi]["humidity_status"] = r["status"]
+            latest[pi]["humidity_timestamp"] = r["timestamp"]
+
+    return list(latest.values())
+
+	

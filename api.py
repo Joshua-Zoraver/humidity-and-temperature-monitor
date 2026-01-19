@@ -1,18 +1,15 @@
 from flask import Flask, jsonify, send_from_directory, request
-from src.sensors import read_values
 from src.thresholds import TEMP_THRESHOLD, HUMIDITY_THRESHOLD, evaluate_sensor
-from src.sensor_db import get_recent_data, store_remote_data
+from src.sensor_db import get_recent_data, store_remote_data, get_latest_per_pi
 
 app = Flask(__name__)
 
-@app.route("/sensor-data", methods=["GET"])
-def get_sensor_data():
-    #For local sensor reading (if host Pi also has sensors)
-    data = read_values()
-    data["temp_status"] = evaluate_sensor(data.get("temperature"), *TEMP_THRESHOLD)
-    data["humidity_status"] = evaluate_sensor(data.get("humidity"), *HUMIDITY_THRESHOLD)
-    data["pi_id"] = "host"  #Identify this as host Pi data
-    return jsonify(data), 200
+@app.route("/live", methods=["GET"])
+def get_live():
+	try:
+		return jsonify(get_latest_per_pi()), 200
+	except Exception as e:
+		return jsonify({"error": str(e)}), 500
 
 @app.route("/remote-data", methods=["POST"])
 def receive_remote_data():

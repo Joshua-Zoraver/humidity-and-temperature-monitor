@@ -20,7 +20,7 @@ except ImportError:
 # ----------------------------
 # Configuration
 # ----------------------------
-SERVER_URL = "http://192.168.1.72:5000/remote-data"  # Replace with Flask server IP
+SERVER_URL = "http://192.168.1.78:5000/remote-data"  # Replace with Flask server IP
 
 def get_pi_id():
     """
